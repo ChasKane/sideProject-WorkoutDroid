@@ -1,5 +1,5 @@
 # Workout Droid
-A daily-total-based workout motivator. 
+A workout motivator/coach based on daily-total workouts ("I want to do 1000 pushups today!").
 
 # Usage
 Tell the droid that you want to do a `total` of 1000 push-ups in a day, and it will remind you at regular `intervals` throughout the day to do a `new set` of push-ups until you've completed your `total`.

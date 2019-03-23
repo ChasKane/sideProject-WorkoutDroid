@@ -1,64 +1,69 @@
 import React from "react";
-import { StyleSheet, View, Text, TouchableOpacity, Button } from "react-native";
-import { Input } from "react-native-elements";
+import { connect } from "react-redux";
+import { StyleSheet, View, Modal } from "react-native";
+import { Input, Text, Button, Divider } from "react-native-elements";
 import DateTimePicker from "react-native-modal-datetime-picker";
 
-export default class WorkoutScreen extends React.Component {
-  state = {
-    isDateTimePickerVisible: false
-    , activeDeadzone: {index: -1, startOrEnd: null}
-  };
-  showDateTimePicker = dz => this.setState({ activeDeadzone: dz, isDateTimePickerVisible: true });
-  hideDateTimePicker = () => this.setState({ activeDeadzone: {index: -1, startOrEnd: null}, isDateTimePickerVisible: false });
-  handleDatePicked = (date, modifyDeadzone) => {
-    console.log(date, modifyDeadzone);
-    modifyDeadzone(date, this.state.activeDeadzone.index, this.state.activeDeadzone.startOrEnd);
-    this.hideDateTimePicker();
-  };
+const sortDeadzonesByStartTime = (a, b) => (
+  (a.start.hour - b.start.hour === 0)
+  ? (a.start.min - b.start.min)
+  : (a.start.hour - b.start.hour)
+);
 
-  render() {
-    const params = this.props.navigation.state.params;
-
-    let workoutName
-      , deadzones
-      , updateWorkoutName
-      , modifyDeadzone;
-    if(params){
-      workoutName = params.workoutName || "pushups, situps, etc.";
-      deadzones = params.deadzones || [];
-      updateWorkoutName = params.updateWorkoutName || (() => console.log("updateWorkoutName funciton missing"));
-      modifyDeadzone = params.modifyDeadzone || (() => console.log("modifyDeadzone funciton missing"));
-    } else {
-      console.log("no params");
-    }
-    return (
-      <View style={styles.container}>
-        <Input
-          label="Workout Name"
-          defaultValue={workoutName}
-          onChangeText={updateWorkoutName}
-        />
-        <Text>Deadzones</Text>
-        {deadzones.map((dz, index) => (
-          <View key={index} style={{flexDirection: "row", width: '100%'}}>
-          <Button onPress={dz => this.showDateTimePicker(index, "start")} title={dz.start.getHours().toString()} />
-            <Text> to </Text>
-          </View>
-        ))}
-        <TouchableOpacity onPress={this.showDateTimePicker}>
-          <Text>New Deadzone</Text>
-        </TouchableOpacity>
-        <DateTimePicker
-          isVisible={this.state.isDateTimePickerVisible}
-          mode="time"
-      onConfirm={date => this.handleDatePicked(date, modifyDeadzone)}
-          onCancel={this.hideDateTimePicker}
-
-        />
+export const UnconnectedWorkoutScreen = props => (
+  <View style={styles.container}>
+    <Input
+      label="Workout Name"
+      labelStyle={styles.label}
+      defaultValue={props.workoutName}
+      onChangeText={props.updateWorkoutName}
+    />
+    <Input
+      style={{marginTop: 50}}
+      label="Dialy total"
+      labelStyle={styles.label}
+      keyboardType="numeric"
+      defaultValue={props.dailyTotal.toString()}
+      onChangeText={props.updateDailyTotal}
+    />
+    <View style={styles.deadzonesContainer} >
+      <Text style={styles.label}>Deadzones</Text>
+      {Object.values(props.deadzones).sort(sortDeadzonesByStartTime).map(dz => (
+        <View key={dz.id} style={styles.deadzone}>
+          <Button
+            onPress={() => props.showDateTimePicker({id: dz.id, startOrEnd: "start"})}
+            title={dz.start.hour.toString().padStart(2, "0") + ':' + dz.start.min.toString().padStart(2, "0")}
+          />
+          <Text style={{fontSize: 20}}> to </Text>
+          <Button
+            onPress={() => props.showDateTimePicker({id: dz.id, startOrEnd: "end"})}
+            title={dz.end.hour.toString().padStart(2, "0") + ':' + dz.end.min.toString().padStart(2, "0")}
+          />
+        </View>
+      ))}
+      <Button style={{marginTop: 5}} title="New Deadzone" onPress={props.createDeadzone} />
+    </View>
+    <DateTimePicker
+      isVisible={props.isDateTimePickerVisible}
+      mode="time"
+      onConfirm={props.handleDatePicked}
+      onCancel={props.hideDateTimePicker}
+    />
+    <Modal
+      animationType={"fade"}
+      transparent={true}
+      visible={props.endBeforeStartError}
+      onRequestClose={props.dismissEndBeforeStartError}
+    >
+      <View style={styles.modalOuterView}>
+        <View style={styles.modalInnerView}>
+          <Text>End time must be after start time.</Text>
+          <Button title="Dismiss" onPress={props.dismissEndBeforeStartError} />
+        </View>
       </View>
-    );
-  }
-}
+    </Modal>
+  </View>
+);
 
 const styles = StyleSheet.create({
   container: {
@@ -66,4 +71,50 @@ const styles = StyleSheet.create({
     , justifyContent: 'flex-start'
     , padding: 20
   }
+  , deadzonesContainer: {
+    margin: 10
+  }
+  , deadzone: {
+    flexDirection: "row"
+    , alignItems: "center"
+    , paddingVertical: 10
+  }
+  , label: {
+    fontSize: 16
+    , fontWeight: "bold"
+    , color: "grey"
+  }
+  , modalOuterView: {
+    flex: 1
+    , flexDirection: 'column'
+    , justifyContent: 'center'
+    , alignItems: 'center'
+  }
+  , modalInnerView: {
+    alignItems: 'center'
+    , justifyContent: 'center'
+    , borderWidth: 3
+    , padding: 10
+    , width: 300
+    , height: 100
+    , backgroundColor: "white"
+  }
 });
+
+const mapStateToProps = state => ({
+  workoutName: state.workoutName
+  , dailyTotal: state.dailyTotal
+  , deadzones: state.deadzones
+  , isDateTimePickerVisible: state.isDateTimePickerVisible
+  , endBeforeStartError: state.endBeforeStartError
+});
+const mapDispatchToProps = dispatch => ({
+  updateWorkoutName: newName => dispatch({type: "updateWorkoutName", payload: newName})
+  , updateDailyTotal: newDailyTotal => dispatch({type: "updateDailyTotal", payload: newDailyTotal})
+  , handleDatePicked: date => dispatch({type: "handleDatePicked", payload: date})
+  , createDeadzone: () => dispatch({type: "createDeadzone"})
+  , showDateTimePicker: payload => dispatch({type: "showDateTimePicker", payload: payload})
+  , hideDateTimePicker: () => dispatch({type: "hideDateTimePicker"})
+  , dismissEndBeforeStartError: () => dispatch({type: "dismissEndBeforeStartError"})
+});
+export default connect(mapStateToProps, mapDispatchToProps)(UnconnectedWorkoutScreen)

@@ -1,138 +1,22 @@
 import React from 'react';
-import { Notifications } from 'expo';
-import { StyleSheet, Button, View } from 'react-native';
+import { connect } from 'react-redux'
+import { StyleSheet, View, Switch } from 'react-native';
+import { Input, Text, Button } from "react-native-elements";
 
-const makeDeadzone = (start, end) => {
- dz = {
-    start: new Date()
-    , end: new Date()
-  };
-  dz.start.setHours(start);
-  if(end == 24)
-    dz.end.setHours(23, 59, 59);
-  else
-    dz.end.setHours(end);
-  return dz;
-};
 
-export default class HomeScreen extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      deadzones: [makeDeadzone(0, 8), makeDeadzone(20, 24)]
-      , notificationDelay1: 1
-      , notificationDelay2: 3
-      , workoutName: "pushups"
-    };
-
-    Notifications.addListener(e => {
-      console.log("notified ", e)
-    });
-    Notifications.createChannelAndroidAsync("WerkDroid", androidChannel);
-    Notifications.deleteCategoryAsync("Workout").then(() =>
-      Notifications.createCategoryAsync("Workout", notificationActions)
-    );
-    this.props.navigation.push(
-      "WorkoutScreen"
-      , {
-        workoutName: this.state.workoutName
-        , deadzones: this.state.deadzones
-        , modifyDeadzone: this.modifyDeadzone
-        , updateWorkoutName: this.updateWorkoutName
-      }
-    );
-  }
-
-  updateWorkoutName = (name) => {
-    this.setState({workoutName: name});
-  }
-
-  modifyDeadzone(date, index, startOrEnd) {
-    const deadzones = JSON.parse(JSON.stringify(this.state.deadzones));
-    deadzones[index][startOrEnd] = date;
-    this.setState({
-      deadzones: deadzones
-      , ...this.state
-    });
-  }
-
-  render() {
-    return (
-      <View style={styles.container}>
-        <Button
-          title="now"
-          onPress={
-            () => Notifications.presentLocalNotificationAsync({
-              title: "notfiication title"
-              , body: "notification body"
-              , categoryId: "Workout"
-              , android: {
-                channelId: "WerkDroid"
-              }
-            })
-          }
-        ></Button>
-        <Button
-          title="3 seconds later"
-          onPress={
-            () => setTimeout(
-              Notifications.scheduleLocalNotificationAsync({
-                title: "title"
-                , body: "body"
-                , categoryId: "Workout"
-                , android: {
-                  channelId: "WerkDroid"
-                }
-              })
-              , { time: (new Date()).getTime() + 3000 }
-            )
-          }
-        ></Button>
-        <Button
-          title="Push-ups"
-          onPress={() => this.props.navigation.push(
-            "WorkoutScreen"
-            , {
-              workoutName: this.state.workoutName
-              , deadzones: this.state.deadzones
-              , addDeadzone: this.addDeadzone
-              , updateWorkoutName: this.updateWorkoutName
-            }
-          )}
-        ></Button>
-      </View>
-    );
-  }
-}
-
-const notificationActions = [
-  {
-    actionId: "New Deadzone"
-    , buttonTitle: "New Deadzone"
-    , textInput: {
-      submitButtonTitle: "New Deadzone"
-      , placeholder: "How many minutes? (enter a number)"
-    }
-  }
-  , {
-    actionId: "Done"
-    , buttonTitle: "👌"
-  }
-  , {
-    actionId: "delay1"
-    , buttonTitle: `⏱  min`
-  }
-  , {
-    actionId: "delay2"
-    , buttonTitle: `⏱  min`
-  }
-];
-
-const androidChannel = {
-  name: "WerkDroid"
-  , sound: true
-  , vibrate: true
-}
+export const UnconnectedHomeScreen = props => (
+  <View style={styles.container}>
+  <Text>Hey! I'm a simple workout droid, model 353xtra. I'm happy to help you. Tell me how many pushups you'd like to do today, and I'll break that daily total into bite-sized chuncks you can do a few times per hour to slowly get you to your goal. Right now, I'm down for maintenance, so my user-interface is all that works. Soon, my maker will have me able to customize more features of a workout, and allow you to have me help you with any number of seperate workouts. Right now, the main feature I'd normally provide doesnt work :( my main purpose is to send notifications throughout the day that tell you when to do how many reps of your workout, and my maker has the interface set up beautifully for those notificaitons, but has to rearchitect how they're saved on your device and how I dispatch them at specific intervals throughout the day. Come back from time to time to see progress! The link that got you here might go down, so tell my maker if you'd like to see me again! Ta-ta (real smooth da na na na)</Text>
+    <Button
+      title={props.workoutName}
+      onPress={() => props.navigation.push("WorkoutScreen")}
+    />
+    <Switch
+      value={props.workoutIsActive}
+      onValueChange={props.handleWorkoutActiveChange}
+    />
+  </View>
+);
 
 const styles = StyleSheet.create({
   container: {
@@ -142,3 +26,24 @@ const styles = StyleSheet.create({
     , justifyContent: 'center'
   },
 });
+
+const mapStateToProps = state => ({
+  workoutName: state.workoutName
+  , dailyTotal: state.dailyTotal
+  , workoutIsActive: state.workoutIsActive
+  , deadzones: state.deadzones
+  , isDateTimePickerVisible: state.isDateTimePickerVisible
+  , endBeforeStartError: state.endBeforeStartError
+});
+const mapDispatchToProps = dispatch => ({
+  updateWorkoutName: newName => dispatch({type: "updateWorkoutName", payload: newName})
+  , updateDailyTotal: newDailyTotal => dispatch({type: "updateDailyTotal", payload: newDailyTotal})
+  , handleWorkoutActiveChange: isActive => dispatch({type: "handleWorkoutActiveChange", payload: isActive})
+  , handleDatePicked: date => dispatch({type: "handleDatePicked", payload: date})
+  , createDeadzone: () => dispatch({type: "createDeadzone"})
+  , showDateTimePicker: payload => dispatch({type: "showDateTimePicker", payload: payload})
+  , hideDateTimePicker: () => dispatch({type: "hideDateTimePicker"})
+  , dismissEndBeforeStartError: () => dispatch({type: "dismissEndBeforeStartError"})
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(UnconnectedHomeScreen);
