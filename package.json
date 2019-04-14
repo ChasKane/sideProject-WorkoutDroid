@@ -15,7 +15,8 @@
     "react-native-modal-datetime-picker": "^6.0.0",
     "react-navigation": "^3.3.2",
     "react-redux": "^6.0.1",
-    "redux": "^4.0.1"
+    "redux": "^4.0.1",
+    "redux-thunk": "^2.3.0"
   },
   "devDependencies": {
     "babel-preset-expo": "^5.0.0"

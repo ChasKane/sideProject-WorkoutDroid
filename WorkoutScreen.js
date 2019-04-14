@@ -1,8 +1,10 @@
 import React from "react";
 import { connect } from "react-redux";
-import { StyleSheet, View, Modal } from "react-native";
+import { Notifications } from 'expo';
+import { View, Modal } from "react-native";
 import { Input, Text, Button, Divider } from "react-native-elements";
 import DateTimePicker from "react-native-modal-datetime-picker";
+import { WorkoutScreenStyles as styles } from './styles';
 
 const sortDeadzonesByStartTime = (a, b) => (
   (a.start.hour - b.start.hour === 0)
@@ -26,6 +28,22 @@ export const UnconnectedWorkoutScreen = props => (
       defaultValue={props.dailyTotal.toString()}
       onChangeText={props.updateDailyTotal}
     />
+    <Input
+      style={{marginTop: 50}}
+      label="Minutes between sets"
+      labelStyle={styles.label}
+      keyboardType="numeric"
+      defaultValue={props.minutesBetweenSets.toString()}
+      onChangeText={props.updateMinutesBetweenSets}
+    />
+    <Input
+      style={{marginTop: 50}}
+      label={`${props.workoutName} per set`}
+      labelStyle={styles.label}
+      keyboardType="numeric"
+      defaultValue={props.actionsPerSet.toString()}
+      onChangeText={props.updateActionsPerSet}
+    />
     <View style={styles.deadzonesContainer} >
       <Text style={styles.label}>Deadzones</Text>
       {Object.values(props.deadzones).sort(sortDeadzonesByStartTime).map(dz => (
@@ -42,6 +60,7 @@ export const UnconnectedWorkoutScreen = props => (
         </View>
       ))}
       <Button style={{marginTop: 5}} title="New Deadzone" onPress={props.createDeadzone} />
+      <Button style={{marginTop: 5}} title="Save" onPress={props.scheduleNotifications(props.nIDs)} />
     </View>
     <DateTimePicker
       isVisible={props.isDateTimePickerVisible}
@@ -65,56 +84,37 @@ export const UnconnectedWorkoutScreen = props => (
   </View>
 );
 
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#fff'
-    , justifyContent: 'flex-start'
-    , padding: 20
-  }
-  , deadzonesContainer: {
-    margin: 10
-  }
-  , deadzone: {
-    flexDirection: "row"
-    , alignItems: "center"
-    , paddingVertical: 10
-  }
-  , label: {
-    fontSize: 16
-    , fontWeight: "bold"
-    , color: "grey"
-  }
-  , modalOuterView: {
-    flex: 1
-    , flexDirection: 'column'
-    , justifyContent: 'center'
-    , alignItems: 'center'
-  }
-  , modalInnerView: {
-    alignItems: 'center'
-    , justifyContent: 'center'
-    , borderWidth: 3
-    , padding: 10
-    , width: 300
-    , height: 100
-    , backgroundColor: "white"
-  }
-});
 
 const mapStateToProps = state => ({
   workoutName: state.workoutName
   , dailyTotal: state.dailyTotal
+  , minutesBetweenSets: state.minutesBetweenSets
+  , actionsPerSet: state.actionsPerSet
   , deadzones: state.deadzones
   , isDateTimePickerVisible: state.isDateTimePickerVisible
   , endBeforeStartError: state.endBeforeStartError
+  , nIDs: ["id1", "id2"]
 });
-const mapDispatchToProps = dispatch => ({
+const mapDispatchToProps = (dispatch, ownProps) => ({
   updateWorkoutName: newName => dispatch({type: "updateWorkoutName", payload: newName})
   , updateDailyTotal: newDailyTotal => dispatch({type: "updateDailyTotal", payload: newDailyTotal})
+  , updateMinutesBetweenSets: newMinutesBetweenSets => dispatch({type: "updateMinutesBetweenSets", payload: newMinutesBetweenSets})
+  , updateActionsPerSet: newActionsPerSet => dispatch({type: "updateActionsPerSet", payload: newActionsPerSet})
   , handleDatePicked: date => dispatch({type: "handleDatePicked", payload: date})
   , createDeadzone: () => dispatch({type: "createDeadzone"})
   , showDateTimePicker: payload => dispatch({type: "showDateTimePicker", payload: payload})
   , hideDateTimePicker: () => dispatch({type: "hideDateTimePicker"})
   , dismissEndBeforeStartError: () => dispatch({type: "dismissEndBeforeStartError"})
+  , scheduleNotifications: nIDs => e => nIDs.map(
+    id => Notifications.scheduleLocalNotificationAsync({
+        title: "newAction"
+        , body: id
+        , categoryId: "Workout"
+        , sound: true
+        , channelId: "WerkDroid"
+      }
+      , {time: (new Date()).getTime() + 2000}
+    ).then(nID => dispatch({type: "addNID", payload: nID}))
+  )
 });
 export default connect(mapStateToProps, mapDispatchToProps)(UnconnectedWorkoutScreen)
