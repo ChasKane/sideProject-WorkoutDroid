@@ -19,7 +19,7 @@ export class Deadzone {
 
 // General formula: totalActions/totalMinutes = actionsPerSet/minutesBetweenSets
 // minutesBetweenSets and actionsPerSet are the variables, the others stay constant unless changed explicitly
-export const reballance(totalActions, minutesBetweenSets, actionsPerSet, deadzones, changedVariable) {
+export const reballance = (totalActions, minutesBetweenSets, actionsPerSet, deadzones, changedVariable) => {
   let { totalMinutes } = getTotalMinutes(deadzones);
   let scaler = (totalActions/totalMinutes) / (actionsPerSet/minutesBetweenSets);
   switch(changedVariable) {
@@ -55,7 +55,7 @@ export const reballance(totalActions, minutesBetweenSets, actionsPerSet, deadzon
   }
 };
 
-export const getTotalMinutes(deadzones) {
+export const getTotalMinutes = deadzones => {
   let totalMinutes = 24 * 60;
   if(!deadzones) return {totalMinutes: totalMinutes, sortedDeadzones: []}
   const sortedDeadzones = Object.entries(deadzones).map(item => item[1]).sort((dz1, dz2) => dz1.start - dz2.start)
@@ -112,7 +112,7 @@ export const reCalcNotifications = (total, minutesBetweenSets, actionsPerSet, de
   }
 };
 
-export const getNotificationActions(delay=1) = [
+export const getNotificationActions = (delay=1) => ([
   {
     actionId: "newDeadzone"
     , buttonTitle: "New Deadzone"
@@ -133,7 +133,7 @@ export const getNotificationActions(delay=1) = [
     actionId: "pushToLater"
     , buttonTitle: `later`
   }
-];
+]);
 
 export const androidChannel = {
   name: "WerkDroid"

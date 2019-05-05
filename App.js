@@ -5,7 +5,7 @@ import WorkoutScreen from './WorkoutScreen';
 import { Provider } from 'react-redux';
 import { Notifications } from 'expo';
 import store from './store';
-import { androidChannel, notificationActions } from './utils';
+import { androidChannel, getNotificationActions } from './utils';
 
 const MainNavigator = createStackNavigator({
   HomeScreen: {screen: HomeScreen},
@@ -18,7 +18,7 @@ export default class App extends React.Component {
     super(props);
     Notifications.createChannelAndroidAsync("WerkDroid", androidChannel);
     Notifications.deleteCategoryAsync("Workout").then(() =>
-      Notifications.createCategoryAsync("Workout", notificationActions)
+      Notifications.createCategoryAsync("Workout", getNotificationActions())
     );
     Notifications.addListener(e => {
       console.log("notified ", e)

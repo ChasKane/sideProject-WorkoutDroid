@@ -1,6 +1,6 @@
 import thunkMiddleware from 'redux-thunk';
 import { createStore, applyMiddleware } from 'redux';
-import { makeID } from './utils';
+import { makeID, Deadzone } from './utils';
 
 const initialWorkoutID = makeID();
 const initialDeadzoneCollectionID = makeID();
